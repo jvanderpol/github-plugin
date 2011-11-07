@@ -30,7 +30,7 @@ import static java.util.logging.Level.*;
  */
 @Extension
 public class GitHubWebHook implements UnprotectedRootAction {
-    private static final Pattern REPOSITORY_NAME_PATTERN = Pattern.compile("https?://([^/]+)/([^/]+)/([^/]+)");
+    private static final Pattern REPOSITORY_NAME_PATTERN = Pattern.compile("https?://([^/]+)/.*");
 
     public String getIconFileName() {
         return null;
@@ -150,7 +150,9 @@ public class GitHubWebHook implements UnprotectedRootAction {
         LOGGER.fine("Full details of the POST was "+o.toString());
         Matcher matcher = REPOSITORY_NAME_PATTERN.matcher(repoUrl);
         if (matcher.matches()) {
-            GitHubRepositoryName changedRepository = new GitHubRepositoryName(matcher.group(1),matcher.group(2),matcher.group(3));
+            String repoName = repository.getString("name"); // 'foo' portion of the above URL
+            String ownerName = repository.getJSONObject("owner").getString("name"); // 'kohsuke' portion of the above URL
+            GitHubRepositoryName changedRepository = new GitHubRepositoryName(matcher.group(1),ownerName,repoName);
             for (AbstractProject<?,?> job : Hudson.getInstance().getItems(AbstractProject.class)) {
                 GitHubPushTrigger trigger = job.getTrigger(GitHubPushTrigger.class);
                 if (trigger!=null) {
